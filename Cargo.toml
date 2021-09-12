@@ -14,7 +14,7 @@ log= "0.4.8"
 glib= "0.14.5"
 gtk = "0.14.0"
 gtk-sys = "0.14.0"
-libappindicator-sys= "0.5.0"
+libappindicator-sys = { git = "https://github.com/SoxPopuli/libappindicator-sys" }
 
 [[example]]
 name="example1"
