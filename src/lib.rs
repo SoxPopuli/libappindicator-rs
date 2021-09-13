@@ -3,18 +3,55 @@ extern crate glib;
 extern crate gtk;
 extern crate gtk_sys;
 
-use std::{ffi::CStr, str::Utf8Error};
+use std::{ffi::CStr, ptr::addr_of_mut, str::Utf8Error};
 
 pub use libappindicator_sys::*;
 use libappindicator_sys::{AppIndicator as AppIndicatorRaw};
 use glib::translate::{FromGlibPtrNone, ToGlibPtr};
 
-fn cstr_to_string(ptr: *const i8) -> Result<String, Utf8Error>
+#[derive(Debug)]
+pub enum ErrorReason {
+    NullPtr,
+    Utf8Error,
+}
+
+#[derive(Debug)]
+pub struct Error {
+    reason: ErrorReason,
+}
+
+impl Error{
+    pub fn null_ptr() -> Self {
+        Self{ reason: ErrorReason::NullPtr }
+    }
+
+    pub fn utf8_error() -> Self {
+        Self{ reason: ErrorReason::Utf8Error }
+    }
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let reason = match self.reason {
+            ErrorReason::NullPtr => "null string pointer",
+            ErrorReason::Utf8Error => "utf8 conversion error",
+        };
+        write!(f, "{}", reason)
+    }
+}
+impl std::error::Error for Error {}
+
+fn cstr_to_string(ptr: *const i8) -> Result<String, Error>
 {
+    if ptr.is_null()
+    {
+        return Err(Error::null_ptr());
+    }
+
     let cstr = unsafe{ CStr::from_ptr(ptr) };
     match cstr.to_str() {
         Ok(s) => Ok(s.to_owned()),
-        Err(e) => Err(e),
+        Err(_) => Err(Error::utf8_error())
     }
 }
 
@@ -144,7 +181,7 @@ impl AppIndicator {
         self.air
     }
 
-    pub fn get_id(&self) -> Result<String, Utf8Error> {
+    pub fn get_id(&self) -> Result<String, Error> {
         cstr_to_string(unsafe{ 
             app_indicator_get_id(self.air)
         })
@@ -158,37 +195,37 @@ impl AppIndicator {
         unsafe{ app_indicator_get_status(self.air) }.into()
     }
 
-    pub fn get_icon(&self) -> Result<String, Utf8Error> {
+    pub fn get_icon(&self) -> Result<String, Error> {
         cstr_to_string(unsafe{
             app_indicator_get_icon(self.air) 
         })
     }
 
-    pub fn get_icon_desc(&self) -> Result<String, Utf8Error> {
+    pub fn get_icon_desc(&self) -> Result<String, Error> {
         cstr_to_string(unsafe{
             app_indicator_get_icon_desc(self.air)
         })
     }
 
-    pub fn get_icon_theme_path(&self) -> Result<String, Utf8Error> {
+    pub fn get_icon_theme_path(&self) -> Result<String, Error> {
         cstr_to_string(unsafe{
             app_indicator_get_icon_theme_path(self.air)
         })
     }
 
-    pub fn get_attention_icon(&self) -> Result<String, Utf8Error> {
+    pub fn get_attention_icon(&self) -> Result<String, Error> {
         cstr_to_string(unsafe{
             app_indicator_get_attention_icon(self.air)
         })
     }
 
-    pub fn get_attention_icon_desc(&self) -> Result<String, Utf8Error> {
+    pub fn get_attention_icon_desc(&self) -> Result<String, Error> {
         cstr_to_string(unsafe{
             app_indicator_get_attention_icon_desc(self.air)
         })
     }
 
-    pub fn get_title(&self) -> Result<String, Utf8Error> {
+    pub fn get_title(&self) -> Result<String, Error> {
         cstr_to_string(unsafe{
             app_indicator_get_title(self.air)
         })
@@ -201,13 +238,13 @@ impl AppIndicator {
         }
     }
 
-    pub fn get_label(&self) -> Result<String, Utf8Error> {
+    pub fn get_label(&self) -> Result<String, Error> {
         cstr_to_string(unsafe{
             app_indicator_get_label(self.air)
         })
     }
 
-    pub fn get_label_guide(&self) -> Result<String, Utf8Error> {
+    pub fn get_label_guide(&self) -> Result<String, Error> {
         cstr_to_string(unsafe{
             app_indicator_get_label_guide(self.air)
         })

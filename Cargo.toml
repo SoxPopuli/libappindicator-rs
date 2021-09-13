@@ -1,7 +1,7 @@
 [package]
 name = "libappindicator"
-version = "0.6.0"
-authors = ["Kyle Machulis <kyle@nonpolynomial.com>"]
+version = "0.6.1"
+authors = ["Kyle Machulis <kyle@nonpolynomial.com>", "Charlotte Smith <charliesmith5019@gmail.com>"]
 description = "Rust safe bindings for libappindicator"
 license = "LGPL-2.1/LGPL-3.0"
 homepage = "http://github.com/qdot/libappindicator-rs"
