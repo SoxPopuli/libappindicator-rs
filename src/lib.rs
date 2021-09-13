@@ -3,7 +3,7 @@ extern crate glib;
 extern crate gtk;
 extern crate gtk_sys;
 
-use std::{ffi::CStr, ptr::addr_of_mut, str::Utf8Error};
+use std::ffi::CStr;
 
 pub use libappindicator_sys::*;
 use libappindicator_sys::{AppIndicator as AppIndicatorRaw};
