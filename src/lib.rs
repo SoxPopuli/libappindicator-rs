@@ -3,9 +3,20 @@ extern crate glib;
 extern crate gtk;
 extern crate gtk_sys;
 
+use std::{ffi::CStr, str::Utf8Error};
+
 pub use libappindicator_sys::*;
 use libappindicator_sys::{AppIndicator as AppIndicatorRaw};
-use glib::translate::{ToGlibPtr};
+use glib::translate::{FromGlibPtrNone, ToGlibPtr};
+
+fn cstr_to_string(ptr: *const i8) -> Result<String, Utf8Error>
+{
+    let cstr = unsafe{ CStr::from_ptr(ptr) };
+    match cstr.to_str() {
+        Ok(s) => Ok(s.to_owned()),
+        Err(e) => Err(e),
+    }
+}
 
 pub struct AppIndicator {
     air: *mut AppIndicatorRaw
@@ -17,11 +28,37 @@ pub enum AppIndicatorCategory{
     Hardware = 3,
     Other = 4
 }
+
+impl From<u32> for AppIndicatorCategory {
+    fn from(num: u32) -> Self {
+        match num {
+            0 => AppIndicatorCategory::ApplicationStatus,
+            1 => AppIndicatorCategory::Communications,
+            2 => AppIndicatorCategory::SystemServices,
+            3 => AppIndicatorCategory::Hardware,
+            4 => AppIndicatorCategory::Other,
+            _ => panic!("invalid entry"),
+        }
+    }
+}
+
 pub enum AppIndicatorStatus{
     Passive = 0,
     Active = 1,
     Attention = 2
 }
+
+impl From<u32> for AppIndicatorStatus {
+    fn from(num: u32) -> Self {
+        match num {
+            0 => AppIndicatorStatus::Passive,
+            1 => AppIndicatorStatus::Active,
+            2 => AppIndicatorStatus::Attention,
+            _ => panic!("invalid entry"),
+        }
+    }
+}
+
 impl AppIndicator {
     pub fn new(title: &str, icon: &str) -> AppIndicator {
         AppIndicator {
@@ -96,6 +133,97 @@ impl AppIndicator {
             app_indicator_set_attention_icon_full(self.air, name.to_glib_none().0, desc.to_glib_none().0);
         }
     }
+
+    pub fn set_secondary_activate_target(&mut self, menu_item: &mut gtk::Widget) {
+        unsafe {
+            app_indicator_set_secondary_activate_target(self.air, menu_item.to_glib_none().0);
+        }
+    }
+
+    pub fn get_raw(&self) -> *mut AppIndicatorRaw {
+        self.air
+    }
+
+    pub fn get_id(&self) -> Result<String, Utf8Error> {
+        cstr_to_string(unsafe{ 
+            app_indicator_get_id(self.air)
+        })
+    }
+
+    pub fn get_category(&self) -> AppIndicatorCategory {
+        unsafe{ app_indicator_get_category(self.air) }.into()
+    }
+
+    pub fn get_status(&self) -> AppIndicatorStatus {
+        unsafe{ app_indicator_get_status(self.air) }.into()
+    }
+
+    pub fn get_icon(&self) -> Result<String, Utf8Error> {
+        cstr_to_string(unsafe{
+            app_indicator_get_icon(self.air) 
+        })
+    }
+
+    pub fn get_icon_desc(&self) -> Result<String, Utf8Error> {
+        cstr_to_string(unsafe{
+            app_indicator_get_icon_desc(self.air)
+        })
+    }
+
+    pub fn get_icon_theme_path(&self) -> Result<String, Utf8Error> {
+        cstr_to_string(unsafe{
+            app_indicator_get_icon_theme_path(self.air)
+        })
+    }
+
+    pub fn get_attention_icon(&self) -> Result<String, Utf8Error> {
+        cstr_to_string(unsafe{
+            app_indicator_get_attention_icon(self.air)
+        })
+    }
+
+    pub fn get_attention_icon_desc(&self) -> Result<String, Utf8Error> {
+        cstr_to_string(unsafe{
+            app_indicator_get_attention_icon_desc(self.air)
+        })
+    }
+
+    pub fn get_title(&self) -> Result<String, Utf8Error> {
+        cstr_to_string(unsafe{
+            app_indicator_get_title(self.air)
+        })
+    }
+
+    pub fn get_menu(&self) -> gtk::Menu {
+        unsafe{ 
+            let ptr = app_indicator_get_menu(self.air);
+            gtk::Menu::from_glib_none(ptr)
+        }
+    }
+
+    pub fn get_label(&self) -> Result<String, Utf8Error> {
+        cstr_to_string(unsafe{
+            app_indicator_get_label(self.air)
+        })
+    }
+
+    pub fn get_label_guide(&self) -> Result<String, Utf8Error> {
+        cstr_to_string(unsafe{
+            app_indicator_get_label_guide(self.air)
+        })
+    }
+
+    pub fn get_ordering_index(&self) -> u32 {
+        unsafe{ app_indicator_get_ordering_index(self.air) }
+    }
+
+    pub fn get_secondary_activate_target(&self) -> gtk::Widget {
+        unsafe{
+            let ptr = app_indicator_get_secondary_activate_target(self.air);
+            gtk::Widget::from_glib_none(ptr)
+        }
+    }
+
 }
 
 #[cfg(test)]
